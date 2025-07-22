@@ -119,19 +119,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useUsersStore } from '../../stores/UsersStore'
+import { storeToRefs } from 'pinia'
 
 const userStore = useUsersStore()
 
-// Acceso reactivo correcto
-const users = userStore.users
-const loading = userStore.loading
-const error = userStore.error
+// ⚠️ Corrección: reactividad funcional usando storeToRefs
+const { users, loading, error } = storeToRefs(userStore)
 
-// Funciones del store
-const fetchUsers = userStore.fetchUsers
-const updateUser = userStore.updateUser
-const syncRoles = userStore.syncRoles
-const syncPermissions = userStore.syncPermissions
+// Acciones (pueden desestructurarse directamente)
+const { fetchUsers, updateUser, syncRoles, syncPermissions } = userStore
 
 const selectedUser = ref(null)
 const form = ref({
@@ -162,21 +158,17 @@ function cancelEdit() {
 async function saveChanges() {
   const id = selectedUser.value.id
 
-  // Actualizar nombre y email
   await updateUser(id, {
     name: form.value.name,
     email: form.value.email,
   })
 
-  // Sincronizar roles
   const roleArray = form.value.roles.split(',').map(r => r.trim()).filter(Boolean)
   await syncRoles(id, roleArray)
 
-  // Sincronizar permisos
   const permArray = form.value.permissions.split(',').map(p => p.trim()).filter(Boolean)
   await syncPermissions(id, permArray)
 
-  // Recargar datos y cerrar editor
   await fetchUsers()
   selectedUser.value = null
 }

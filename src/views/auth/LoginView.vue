@@ -26,7 +26,7 @@
 import { ref } from 'vue'
 import Swal from 'sweetalert2'
 import { LogIn } from 'lucide-vue-next'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '../../stores/AuthStore'
 
 const store = useAuthStore()
 const email = ref('')

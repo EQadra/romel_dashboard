@@ -23,7 +23,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '../../stores/AuthStore'
 import { Key } from 'lucide-vue-next'
 import Swal from 'sweetalert2'
 

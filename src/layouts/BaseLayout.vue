@@ -27,7 +27,7 @@ const modules = ref([
   {
     name: 'Usuarios',
     icon: User,
-    to: '/permisos'
+    to: '/user-management'
   },
   {
     name: 'Autorización',
@@ -39,14 +39,25 @@ const modules = ref([
     ]
   },
   {
-    name: 'Productos',
+    name: 'Lista Promociones',
     icon: ShoppingBag,
-    to: '/productos'
+    to: '/products'
   },
   {
-    name: 'Transacciones',
+    name: 'Transaccion',
     icon: Gavel,
-    to: '/transacciones'
+    to: '/transactions'
+  },
+  {
+    name: 'Lista Transacciones',
+    icon: Gavel,
+    to: '/transaction-list'
+  },
+  
+  {
+    name: ' Apertura de caja',
+    icon: Gavel,
+    to: '/cash-register'
   }
 ])
 </script>
@@ -73,15 +84,15 @@ const modules = ref([
         </div>
 
         <!-- Configuración de perfil -->
-        <div class="flex items-center space-x-2 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800">
+        <!-- <div class="flex items-center space-x-2 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800">
           <Settings size="20" />
           <span v-if="sidebarStore.isOpen">Config. Perfil</span>
-        </div>
+        </div> -->
 
         <!-- Navigation -->
         <nav>
-          <ul>
-            <li v-for="module in modules" :key="module.name" class="px-2">
+          <ul class="my-3">
+            <li v-for="module in modules" :key="module.name" class="px-2 mt-3">
               <!-- Link directo -->
               <div v-if="module.to">
                 <router-link

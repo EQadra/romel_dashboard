@@ -26,7 +26,7 @@
 <script setup>
 import { ref } from 'vue'
 import { UserPlus } from 'lucide-vue-next'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '../../stores/AuthStore'
 import Swal from 'sweetalert2'
 
 const store = useAuthStore()

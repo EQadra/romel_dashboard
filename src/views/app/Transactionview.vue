@@ -1,135 +1,102 @@
 <template>
-  <div class="max-w-3xl mx-auto p-6">
-    <div
-      class="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-6 transition duration-300"
-    >
-      <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
-        Registrar Transacción
-      </h2>
+  <div :style="{ backgroundColor: darkMode ? '#000' : '#cce4ff', color: darkMode ? '#fff' : '#000', padding: '16px', minHeight: '100vh' }">
+    <h1 style="text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 16px;">Calculadora de Oro</h1>
 
-      <form @submit.prevent="submit" class="space-y-6">
-        <!-- Grupo: Caja y Creador -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <FormInput
-            v-model="form.cash_register_id"
-            label="ID Caja"
-            type="number"
-            required
-          />
-          <FormInput
-            v-model="form.created_by"
-            label="ID Usuario (creador)"
-            type="number"
-            required
-          />
+    <!-- Inputs -->
+    <div style="max-width: 500px; margin: 0 auto;">
+      <div v-for="(label, key) in fieldLabels" :key="key" style="margin-bottom: 12px;">
+        <label :for="key" style="display: block; margin-bottom: 4px;">{{ label }}</label>
+        <input
+          :id="key"
+          v-model="inputs[key]"
+          type="number"
+          :placeholder="placeholders[key]"
+          style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
+        />
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+      <button @click="clearAll" style="padding: 10px 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px;">Limpiar</button>
+      <button @click="showModal = true" style="padding: 10px 16px; background-color: #0275d8; color: white; border: none; border-radius: 4px;">Ver Recibo</button>
+    </div>
+
+    <!-- Modal -->
+    <div v-if="showModal" style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;">
+      <div :style="{ backgroundColor: darkMode ? '#111' : 'white', padding: '24px', borderRadius: '10px', width: '90%', maxWidth: '400px' }">
+        <h2 style="text-align: center; font-size: 18px; font-weight: bold;">Recibo de Cálculo</h2>
+        <p style="text-align: center; font-size: 12px; color: gray;">BMG Electronics</p>
+        <p style="text-align: center; font-size: 12px; color: gray;">Av Rafael Escardó 1143, San Miguel</p>
+        <p style="text-align: center; font-size: 12px; color: gray;">Número de Contacto: 912 184 269</p>
+
+        <div style="margin-top: 12px;">
+          <p>💰 Precio x gramo (USD): <strong>${{ format(pricePerGramUSD) }}</strong></p>
+          <p>💰 Precio x gramo (PEN): <strong>S/ {{ format(pricePerGramPEN) }}</strong></p>
+          <p>⚖️ Gramos: <strong>{{ format(inputs.grams) }} g</strong></p>
+          <p>💵 Total USD: <strong>${{ format(totalUSD) }}</strong></p>
+          <p>💵 Total PEN: <strong>S/ {{ format(totalPEN) }}</strong></p>
         </div>
 
-        <!-- Grupo: Tipo y Metal -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <FormSelect
-            v-model="form.type"
-            label="Tipo"
-            :options="['compra', 'venta']"
-          />
-          <FormSelect
-            v-model="form.metal_type"
-            label="Metal"
-            :options="['oro', 'plata']"
-          />
+        <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+          <button @click="showModal = false" style="padding: 10px 16px; background-color: #555; color: white; border: none; border-radius: 4px;">Cerrar</button>
+          <button @click="printReceipt" style="padding: 10px 16px; background-color: #83a4d4; color: black; border: none; border-radius: 4px;">Imprimir</button>
         </div>
-
-        <!-- Grupo: Detalles -->
-        <div class="grid md:grid-cols-3 gap-4">
-          <FormInput
-            v-model.number="form.grams"
-            label="Gramos"
-            type="number"
-            step="0.01"
-            required
-          />
-          <FormInput
-            v-model.number="form.price_per_gram"
-            label="Precio por gr (PEN)"
-            type="number"
-            step="0.01"
-            required
-          />
-          <FormInput
-            v-model.number="form.exchange_rate"
-            label="T/C (S/)"
-            type="number"
-            step="0.0001"
-            required
-          />
-        </div>
-
-        <!-- Grupo: Totales -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <FormInput
-            v-model.number="form.total_pen"
-            label="Total PEN"
-            type="number"
-            step="0.01"
-            required
-          />
-          <FormInput
-            v-model.number="form.total_usd"
-            label="Total USD"
-            type="number"
-            step="0.01"
-            required
-          />
-        </div>
-
-        <!-- Acciones -->
-        <div class="flex items-center gap-4 mt-4">
-          <button
-            type="submit"
-            class="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
-            :disabled="loading"
-          >
-            {{ loading ? 'Registrando...' : 'Registrar' }}
-          </button>
-
-          <span v-if="success" class="text-green-600 dark:text-green-400 text-sm font-medium">
-            {{ success }}
-          </span>
-          <span v-if="error" class="text-red-600 dark:text-red-400 text-sm font-medium">
-            {{ error }}
-          </span>
-        </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
-import { useTransactionsStore } from '../../stores/transactionStore'
-import FormInput from '../../components/FormInput.vue'
-import FormSelect from '../../components/FormSelect.vue'
+import { reactive, computed, ref } from 'vue'
 
-const store = useTransactionsStore()
-const loading = store.loading
-const error = store.error
-const success = store.success
+const props = defineProps({ darkMode: Boolean })
 
-const form = reactive({
-  cash_register_id: '',
-  type: 'compra',
-  metal_type: 'oro',
+const showModal = ref(false)
+
+const inputs = reactive({
+  pricePerOz: '',
+  exchangeRate: '',
+  purity: '',
+  discountPercentage: '',
   grams: '',
-  price_per_gram: '',
-  total_pen: '',
-  total_usd: '',
-  exchange_rate: '',
-  created_by: '',
 })
 
-const submit = async () => {
-  try {
-    await store.createTransaction({ ...form })
-    Object.keys(form).forEach((k) => (form[k] = ''))
-  } catch {}
+const fieldLabels = {
+  pricePerOz: 'Precio de la onza (USD)',
+  exchangeRate: 'Tipo de cambio (USD a PEN)',
+  purity: 'Ley del oro (pureza)',
+  discountPercentage: '% de descuento',
+  grams: 'Cantidad de gramos a calcular',
+}
+
+const placeholders = {
+  pricePerOz: 'Ej: 1980.45',
+  exchangeRate: 'Ej: 3.75',
+  purity: 'Ej: 0.75',
+  discountPercentage: 'Ej: 5',
+  grams: 'Ej: 10',
+}
+
+const parse = (val) => parseFloat(val) || 0
+const format = (n) => Number(n).toFixed(2)
+
+const pricePerGramUSD = computed(() => {
+  const price = parse(inputs.pricePerOz) / 31.1035
+  const pure = price * parse(inputs.purity)
+  const discount = pure * (parse(inputs.discountPercentage) / 100)
+  return pure - discount
+})
+
+const pricePerGramPEN = computed(() => pricePerGramUSD.value * parse(inputs.exchangeRate))
+const totalUSD = computed(() => pricePerGramUSD.value * parse(inputs.grams))
+const totalPEN = computed(() => pricePerGramPEN.value * parse(inputs.grams))
+
+const clearAll = () => {
+  for (const key in inputs) inputs[key] = ''
+}
+
+const printReceipt = () => {
+  window.print()
 }
 </script>

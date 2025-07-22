@@ -1,96 +1,130 @@
-// stores/useAuthStore.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+
+// Configuración global de Axios
+axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.withCredentials = true // Requiere para usar cookies con Laravel
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
   const user = ref(null)
-  const token = ref(localStorage.getItem('token') || '')
+  const loading = ref(false)
+  const error = ref(null)
 
-  // Datos simulados
-  const fakeUser = {
-    id: 1,
-    name: 'Usuario Demo',
-    email: 'demo@ejemplo.com',
-    password:"password"
+  // Obtener cookie CSRF (necesario antes de login o registro)
+  const getCsrfToken = async () => {
+    try {
+      await axios.get('/sanctum/csrf-cookie')
+  
+      // 🔐 Leer el valor de la cookie XSRF-TOKEN
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1]
+  
+      if (!token) {
+        throw new Error('XSRF-TOKEN no encontrado en cookies')
+      }
+  
+      // ✅ Agregar manualmente el header
+      axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
+  
+      console.log('✅ CSRF token enviado:', decodeURIComponent(token))
+    } catch (err) {
+      console.error('❌ Error obteniendo CSRF cookie', err)
+      throw new Error('No se pudo obtener el token CSRF')
+    }
   }
-
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+  
+  
 
   const login = async (email, password) => {
-    await delay(500) // Simular latencia
-
-    console.log("email:" + email + "password:" +"  " + password);
-    // if (email === fakeUser.email && password === fakeUser.password) {
-    //   token.value = 'fake-jwt-token'
-    //   localStorage.setItem('token', token.value)
-    //   user.value = fakeUser
-      router.push('/dashboard')
-    // } else {
-    //   throw 'Credenciales inválidas'
-    // }
-    
+    error.value = null
+    loading.value = true
+    try {
+      await getCsrfToken()
+      const res = await axios.post('/login', { email, password })
+      console.log('✅ Login response:', res)
+  
+      await fetchUser()
+      console.log('✅ Usuario cargado:', user.value)
+  
+      if (user.value) {
+        router.push('/dashboard')
+      } else {
+        throw new Error('Usuario no disponible después del login')
+      }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al iniciar sesión'
+      console.error('❌ Login fallido:', error.value)
+      throw error.value
+    } finally {
+      loading.value = false
+    }
   }
+  
 
   const register = async (name, email, password) => {
-    await delay(500)
-    // No se guarda realmente nada, solo se simula el éxito
-    router.push('/verify')
+    error.value = null
+    loading.value = true
+    try {
+      await getCsrfToken()
+      await axios.post('/register', { name, email, password })
+      router.push('/verify')
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al registrarse'
+      throw error.value
+    } finally {
+      loading.value = false
+    }
   }
 
   const verifyAccount = async (email, code) => {
-    await delay(500)
-    token.value = 'fake-jwt-token'
-    localStorage.setItem('token', token.value)
-    user.value = fakeUser
-    router.push('/dashboard')
+    error.value = null
+    loading.value = true
+    try {
+      await getCsrfToken()
+      await axios.post('/verify-account', { email, code })
+      await fetchUser()
+      router.push('/dashboard')
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Error al verificar cuenta'
+      throw error.value
+    } finally {
+      loading.value = false
+    }
   }
 
   const fetchUser = async () => {
-    await delay(300)
-    if (token.value === 'fake-jwt-token') {
-      user.value = fakeUser
-    } else {
-      logout()
+    try {
+      const res = await axios.get('/me') // Ruta web protegida por auth
+      user.value = res.data.user || res.data
+    } catch (err) {
+      console.warn('⚠️ No autenticado:', err.response?.status)
+      user.value = null
     }
   }
 
   const logout = async () => {
-    await delay(200)
+    try {
+      await axios.post('/logout')
+    } catch (err) {
+      console.warn('Logout fallido o ya cerrada la sesión')
+    }
     user.value = null
-    token.value = ''
-    localStorage.removeItem('token')
     router.push('/login')
-  }
-
-  const sendResetLink = async (email) => {
-    await delay(300)
-    if (email === fakeUser.email) {
-      return 'Enlace de restablecimiento enviado'
-    } else {
-      throw 'Correo no encontrado'
-    }
-  }
-
-  const resetPassword = async ({ email, token: resetToken, password, password_confirmation }) => {
-    await delay(300)
-    if (email === fakeUser.email && resetToken === 'valid-token') {
-      return 'Contraseña actualizada correctamente'
-    } else {
-      throw 'Token inválido o datos incorrectos'
-    }
   }
 
   return {
     user,
-    token,
+    error,
+    loading,
     login,
     register,
     verifyAccount,
-    logout,
     fetchUser,
-    sendResetLink,
-    resetPassword,
+    logout,
   }
 })

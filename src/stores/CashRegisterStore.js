@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-export const useCashRegisterStore = defineStore('cashRegister', {
+export const useCashRegisterStore = defineStore('CashRegister', {
   state: () => ({
     cashRegister: null,
     loading: false,
@@ -11,7 +11,7 @@ export const useCashRegisterStore = defineStore('cashRegister', {
     async fetchToday() {
       this.loading = true
       try {
-        const res = await axios.get('/api/cash-register/actual')
+        const res = await axios.get('/api//caja/abrir')
         this.cashRegister = res.data.data
       } catch (err) {
         this.cashRegister = null

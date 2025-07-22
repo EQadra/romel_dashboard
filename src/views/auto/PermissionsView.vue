@@ -1,76 +1,93 @@
 <template>
-  <div class="p-6 max-w-2xl mx-auto">
+  <div class="p-6 max-w-4xl mx-auto">
     <h2 class="text-2xl font-bold mb-4">Gestión de Permisos</h2>
 
-    <button
-      @click="showCreateModal"
-      class="mb-4 bg-blue-600 text-white px-4 py-2 rounded"
+    <!-- Botón Crear -->
+    <div class="mb-4 flex justify-between items-center">
+      <input
+        v-model="search"
+        type="text"
+        placeholder="Buscar permiso..."
+        class="border px-3 py-2 rounded w-1/2"
+      />
+      <button
+        @click="showCreateModal"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Crear Permiso
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <EasyDataTable
+      :headers="headers"
+      :items="filteredPermissions"
+      :loading="loading"
+      :search-value="search"
+      table-class-name="customize-table"
+      header-text-direction="center"
+      body-text-direction="left"
+      theme-color="#2563eb"
     >
-      Crear Permiso
-    </button>
-
-    <!-- Mensajes de carga / error opcionales -->
-    <p v-if="loading" class="mb-2">Cargando…</p>
-    <p v-if="error" class="mb-2 text-red-600">{{ error }}</p>
-
-    <table class="w-full table-auto border border-gray-300">
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="border p-2 text-left">ID</th>
-          <th class="border p-2 text-left">Nombre</th>
-          <th class="border p-2 text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="perm in permissions" :key="perm.id">
-          <td class="border p-2">{{ perm.id }}</td>
-          <td class="border p-2">{{ perm.name }}</td>
-          <td class="border p-2 text-center space-x-2">
-            <button
-              @click="showEditModal(perm)"
-              class="text-blue-600 hover:underline"
-            >
-              Editar
-            </button>
-            <button
-              @click="confirmDelete(perm.id)"
-              class="text-red-600 hover:underline"
-            >
-              Eliminar
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <template #item-actions="{ id, name }">
+        <div class="space-x-2 text-center">
+          <button
+            @click="showEditModal({ id, name })"
+            class="text-blue-600 hover:underline"
+          >
+            Editar
+          </button>
+          <button
+            @click="confirmDelete(id)"
+            class="text-red-600 hover:underline"
+          >
+            Eliminar
+          </button>
+        </div>
+      </template>
+    </EasyDataTable>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import Swal from 'sweetalert2'
-import { storeToRefs } from 'pinia'
+import { onMounted, ref, computed } from 'vue'
 import { usePermissionsStore } from '../../stores/PermissionsStore'
+import { storeToRefs } from 'pinia'
+import Swal from 'sweetalert2'
+import EasyDataTable from 'vue3-easy-data-table'
+import 'vue3-easy-data-table/dist/style.css'
 
-/* 1️⃣  Instancia única del store */
+// Store
 const store = usePermissionsStore()
-
-/* 2️⃣  Mantén el estado como refs reactivos */
 const { permissions, loading, error } = storeToRefs(store)
-
-/* 3️⃣  Acciones (no necesitan refs) */
 const {
   fetchPermissions,
   createPermission,
   updatePermission,
-  deletePermission
+  deletePermission,
 } = store
 
-/* 4️⃣  Carga inicial */
+// Estado local
+const search = ref('')
+
+// Columnas de tabla
+const headers = [
+  { text: 'ID', value: 'id', sortable: true },
+  { text: 'Nombre', value: 'name', sortable: true },
+  { text: 'Acciones', value: 'actions', sortable: false },
+]
+
+// Buscar sincrónicamente
+const filteredPermissions = computed(() => {
+  return permissions.value
+})
+
+// Carga inicial
 onMounted(() => {
   fetchPermissions()
 })
 
-/* 5️⃣  UI helpers --------------------------------------------------------- */
+// Crear permiso
 const showCreateModal = async () => {
   const { value: name } = await Swal.fire({
     title: 'Crear Permiso',
@@ -94,7 +111,8 @@ const showCreateModal = async () => {
   }
 }
 
-const showEditModal = async perm => {
+// Editar permiso
+const showEditModal = async (perm) => {
   const { value: newName } = await Swal.fire({
     title: 'Editar Permiso',
     input: 'text',
@@ -117,7 +135,8 @@ const showEditModal = async perm => {
   }
 }
 
-const confirmDelete = async id => {
+// Eliminar permiso
+const confirmDelete = async (id) => {
   const confirm = await Swal.fire({
     title: '¿Estás seguro?',
     text: 'Esta acción no se puede deshacer.',
@@ -139,13 +158,10 @@ const confirmDelete = async id => {
 </script>
 
 <style scoped>
-/* (Tu CSS de interruptor que aún no utilizas en este componente) */
-.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-          background-color: #ccc; transition: .4s; border-radius: 24px; }
-.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px;
-                 bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-input:checked + .slider { background-color: #4caf50; }
-input:checked + .slider:before { transform: translateX(18px); }
+/* Estilos personalizados para la tabla si deseas */
+.customize-table {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
 </style>

@@ -20,7 +20,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '../../stores/AuthStore'
 import { ShieldCheck } from 'lucide-vue-next'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'

@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useDark } from '@vueuse/core'
 
-export const useSidebarStore = defineStore('sidebar', () => {
+export const useSidebarStore = defineStore('Sidebar', () => {
   // Estado reactivo para el sidebar
   const isOpen = ref(true)
 
