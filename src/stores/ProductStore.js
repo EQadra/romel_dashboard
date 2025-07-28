@@ -8,7 +8,7 @@ export const useProductStore = defineStore('product', () => {
   // Obtener todos los productos
   async function fetchAll() {
     try {
-      const res = await axios.get('/api/products')
+      const res = await axios.get('/productos')
       products.value = res.data
     } catch (error) {
       console.error('Error al obtener productos:', error)
@@ -18,7 +18,7 @@ export const useProductStore = defineStore('product', () => {
   // Crear un producto
   async function create(formData) {
     try {
-      const res = await axios.post('/api/products', formData, {
+      const res = await axios.post('/productos', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       products.value.push(res.data)
@@ -30,7 +30,7 @@ export const useProductStore = defineStore('product', () => {
   // Actualizar un producto
   async function update(id, formData) {
     try {
-      const res = await axios.post(`/api/products/${id}?_method=PUT`, formData, {
+      const res = await axios.post(`/productos/${id}?_method=PUT`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       const index = products.value.findIndex(p => p.id === id)
@@ -45,7 +45,7 @@ export const useProductStore = defineStore('product', () => {
   // Eliminar un producto
   async function remove(id) {
     try {
-      await axios.delete(`/api/products/${id}`)
+      await axios.delete(`/productos/${id}`)
       products.value = products.value.filter(p => p.id !== id)
     } catch (error) {
       console.error('Error al eliminar producto:', error)

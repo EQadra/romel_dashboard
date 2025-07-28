@@ -1,3 +1,4 @@
+// stores/useTransactionsStore.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
@@ -8,6 +9,23 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const success = ref(null)
   const todayTransactions = ref([])
 
+  const getCsrfToken = async () => {
+    try {
+      await axios.get('/sanctum/csrf-cookie')
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1]
+
+      if (!token) throw new Error('XSRF-TOKEN no encontrado en cookies')
+
+      axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
+    } catch (err) {
+      console.error('❌ Error obteniendo CSRF cookie', err)
+      throw new Error('No se pudo obtener el token CSRF')
+    }
+  }
+
   // Crear una transacción
   const createTransaction = async (payload) => {
     loading.value = true
@@ -15,9 +33,9 @@ export const useTransactionsStore = defineStore('transactions', () => {
     success.value = null
 
     try {
-      const { data } = await axios.post('http://localhost:8000/api/transaccion', payload)
+      await getCsrfToken()
+      const { data } = await axios.post('http://localhost:8000/transaccion', payload)
       success.value = data.message
-      // Opcional: recargar la lista después de crear
       await fetchTodayTransactions()
     } catch (e) {
       error.value = e.response?.data?.message || 'Error al registrar transacción'
@@ -32,7 +50,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     error.value = null
 
     try {
-      const { data } = await axios.get('http://localhost:8000/api/transacciones/dia')
+      const { data } = await axios.get('http://localhost:8000/transacciones/dia')
       todayTransactions.value = data.data
     } catch (e) {
       error.value = e.response?.data?.message || 'Error al cargar transacciones'

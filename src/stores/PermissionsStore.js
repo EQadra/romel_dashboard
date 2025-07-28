@@ -7,10 +7,31 @@ export const usePermissionsStore = defineStore('permissions', () => {
   const loading = ref(false)
   const error = ref(null)
 
+  const getCsrfToken = async () => {
+    try {
+      await axios.get('http://localhost:8000/sanctum/csrf-cookie')
+
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1]
+
+      if (!token) {
+        throw new Error('XSRF-TOKEN no encontrado en cookies')
+      }
+
+      axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
+      console.log('✅ CSRF token enviado:', decodeURIComponent(token))
+    } catch (err) {
+      console.error('❌ Error obteniendo CSRF cookie', err)
+      throw new Error('No se pudo obtener el token CSRF')
+    }
+  }
+
   const fetchPermissions = async () => {
     loading.value = true
     try {
-      const res = await axios.get('http://localhost:8000/api/permisos')
+      const res = await axios.get('http://localhost:8000/permisos')
       permissions.value = res.data
     } catch (err) {
       console.error('Error al cargar permissions:', err)
@@ -22,7 +43,8 @@ export const usePermissionsStore = defineStore('permissions', () => {
 
   const createPermission = async (name) => {
     try {
-      const res = await axios.post('http://localhost:8000/api/permisos', { name })
+      await getCsrfToken() // ✅ CSRF antes de POST
+      const res = await axios.post('http://localhost:8000/permisos', { name })
       permissions.value.push(res.data)
     } catch (err) {
       console.error('Error al crear permiso:', err)
@@ -32,7 +54,8 @@ export const usePermissionsStore = defineStore('permissions', () => {
 
   const updatePermission = async (id, name) => {
     try {
-      const res = await axios.put(`http://localhost:8000/api/permisos/${id}`, { name })
+      await getCsrfToken() // ✅ CSRF antes de PUT
+      const res = await axios.put(`http://localhost:8000/permisos/${id}`, { name })
       const index = permissions.value.findIndex(p => p.id === id)
       if (index !== -1) permissions.value[index] = res.data
     } catch (err) {
@@ -43,7 +66,8 @@ export const usePermissionsStore = defineStore('permissions', () => {
 
   const deletePermission = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/api/permisos/${id}`)
+      await getCsrfToken() // ✅ CSRF antes de DELETE
+      await axios.delete(`http://localhost:8000/permisos/${id}`)
       permissions.value = permissions.value.filter(p => p.id !== id)
     } catch (err) {
       console.error('Error al eliminar permiso:', err)
