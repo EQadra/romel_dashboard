@@ -52,7 +52,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useProductStore } from '../../stores/ProductStore'
+import { useProductStore } from '../../stores/ProductsStore'
 import { storeToRefs } from 'pinia'
 import Modal from '../../components/Modal.vue'
 

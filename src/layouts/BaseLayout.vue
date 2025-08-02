@@ -1,20 +1,22 @@
 <script setup>
-import { ref } from 'vue'
+import { reactive } from 'vue'
 import { useSidebarStore } from '../stores/sidebarStore'
 import { useDark } from '@vueuse/core'
 import {
   Menu,
-  User,
-  FileText,
-  Briefcase,
-  ShoppingBag,
-  Gavel,
-  Settings,
+  BadgeCheck,
+  ListOrdered,
+  Tag,
+  CreditCard,
+  ShieldCheck,
+  Users,
   ChevronDown,
   ChevronUp,
   Moon,
   Sun,
-  LogOut
+  LogOut,
+  Wallet,
+  Lock,
 } from 'lucide-vue-next'
 
 const sidebarStore = useSidebarStore()
@@ -23,40 +25,39 @@ const toggleDark = () => {
   isDark.value = !isDark.value
 }
 
-const modules = ref([
+const modules = reactive([
   {
     name: 'Usuarios',
-    icon: User,
+    icon: Users,
     to: '/user-management'
   },
   {
     name: 'Autorización',
-    icon: FileText,
+    icon: ShieldCheck,
     open: false,
     options: [
-      { name: 'Roles', icon: Briefcase, to: '/roles' },
-      { name: 'Permisos', icon: FileText, to: '/permisos' }
+      { name: 'Roles', icon: BadgeCheck, to: '/roles' },
+      { name: 'Permisos', icon: Lock, to: '/permisos' }
     ]
   },
   {
     name: 'Lista Promociones',
-    icon: ShoppingBag,
+    icon: Tag,
     to: '/products'
   },
   {
     name: 'Transaccion',
-    icon: Gavel,
+    icon: CreditCard,
     to: '/transactions'
   },
   {
     name: 'Lista Transacciones',
-    icon: Gavel,
+    icon: ListOrdered,
     to: '/transaction-list'
   },
-  
   {
-    name: ' Apertura de caja',
-    icon: Gavel,
+    name: 'Apertura de caja',
+    icon: Wallet,
     to: '/cash-register'
   }
 ])
@@ -67,14 +68,15 @@ const modules = ref([
     <!-- Sidebar -->
     <aside :class="[
       'flex flex-col justify-between h-full shadow-lg transition-all duration-300',
-      sidebarStore.isOpen ? 'w-64' : 'w-20',
+      sidebarStore.isOpen ? 'w-64' : 'w-16',
       isDark ? 'bg-gray-900 text-white' : 'bg-white text-black'
     ]">
       <!-- Top section -->
       <div>
-        <!-- Header -->
+        <!-- Header with image logo -->
         <div class="flex items-center justify-between p-4 ml-2">
-          <span v-if="sidebarStore.isOpen" class="text-xl font-bold">Logo</span>
+          <img v-if="sidebarStore.isOpen" src="/Logo.png" alt="Logo" class="h-8" />
+          <p v-if="sidebarStore.isOpen">BMGOro</p>
           <button
             @click="sidebarStore.toggleSidebar()"
             class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800"
@@ -82,12 +84,6 @@ const modules = ref([
             <Menu size="20" />
           </button>
         </div>
-
-        <!-- Configuración de perfil -->
-        <!-- <div class="flex items-center space-x-2 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800">
-          <Settings size="20" />
-          <span v-if="sidebarStore.isOpen">Config. Perfil</span>
-        </div> -->
 
         <!-- Navigation -->
         <nav>

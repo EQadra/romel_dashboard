@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { getCsrfToken } from '../utils/csrf' // ajusta esta ruta según tu estructura
 
 export const useCashRegisterStore = defineStore('CashRegister', {
   state: () => ({
@@ -9,27 +10,6 @@ export const useCashRegisterStore = defineStore('CashRegister', {
   }),
 
   actions: {
-    async getCsrfToken() {
-      try {
-        await axios.get('/sanctum/csrf-cookie')
-
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('XSRF-TOKEN='))
-          ?.split('=')[1]
-
-        if (!token) {
-          throw new Error('XSRF-TOKEN no encontrado en cookies')
-        }
-
-        axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
-        console.log('✅ CSRF token enviado:', decodeURIComponent(token))
-      } catch (err) {
-        console.error('❌ Error obteniendo CSRF cookie', err)
-        throw new Error('No se pudo obtener el token CSRF')
-      }
-    },
-
     async fetchToday() {
       this.loading = true
       try {
@@ -37,6 +17,8 @@ export const useCashRegisterStore = defineStore('CashRegister', {
         this.cashRegister = res.data.data
       } catch (err) {
         this.cashRegister = null
+        this.error = 'Error al cargar caja actual'
+        console.error(err)
       } finally {
         this.loading = false
       }
@@ -45,11 +27,12 @@ export const useCashRegisterStore = defineStore('CashRegister', {
     async openCash(data) {
       this.loading = true
       try {
-        await this.getCsrfToken() // ✅ Obtener CSRF antes de enviar POST
+        await getCsrfToken()
         const res = await axios.post('/caja/abrir', data)
         this.cashRegister = res.data.data
       } catch (err) {
-        throw err.response?.data?.message || 'Error al abrir caja'
+        this.error = err.response?.data?.message || 'Error al abrir caja'
+        throw this.error
       } finally {
         this.loading = false
       }
@@ -58,11 +41,12 @@ export const useCashRegisterStore = defineStore('CashRegister', {
     async closeCash(data) {
       this.loading = true
       try {
-        await this.getCsrfToken() // ✅ Obtener CSRF antes de enviar POST
+        await getCsrfToken()
         const res = await axios.post('/caja/cerrar', data)
         this.cashRegister = res.data.data
       } catch (err) {
-        throw err.response?.data?.message || 'Error al cerrar caja'
+        this.error = err.response?.data?.message || 'Error al cerrar caja'
+        throw this.error
       } finally {
         this.loading = false
       }

@@ -1,28 +1,13 @@
+// stores/useUsersStore.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
+import { getCsrfToken } from '../utils/csrf' // Asegúrate de que la ruta sea correcta
 
 export const useUsersStore = defineStore('users', () => {
   const users = ref([])
   const loading = ref(false)
   const error = ref(null)
-
-  // Función interna para obtener el token CSRF
-  const getCsrfToken = async () => {
-    try {
-      await axios.get('/sanctum/csrf-cookie')
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1]
-
-      if (!token) throw new Error('XSRF-TOKEN no encontrado en cookies')
-      axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
-    } catch (err) {
-      console.error('❌ Error obteniendo CSRF cookie', err)
-      throw new Error('No se pudo obtener el token CSRF')
-    }
-  }
 
   /** Obtener todos los usuarios */
   const fetchUsers = async () => {
@@ -39,7 +24,7 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  /** Actualizar nombre / email / password */
+  /** Actualizar nombre / email / password / roles / permisos */
   const updateUser = async (id, payload) => {
     try {
       await getCsrfToken()

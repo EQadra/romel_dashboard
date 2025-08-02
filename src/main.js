@@ -4,17 +4,18 @@ import App from './App.vue'
 import router from './router'
 import './style.css'
 
-import axios from 'axios'
+// ✅ Axios: configuración en archivo separado
+import { setupAxios } from './plugins/axios'
 
-// ✅ Axios global setup
-axios.defaults.baseURL = 'http://localhost:8000'
-axios.defaults.withCredentials = true // Requiere cookies de sesión
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest' // Evita redirecciones HTML
-
+// Crea instancia de app
 const app = createApp(App)
 
-// ✅ Setup Pinia y router
-const pinia = createPinia()
-app.use(pinia)
+// Plugins
+app.use(createPinia())
 app.use(router)
+
+// Axios global config
+setupAxios()
+
+// Monta app
 app.mount('#app')

@@ -35,7 +35,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import { useRolesStore } from '../../stores/RoleStore.js'
+import { useRolesStore } from '../../stores/RolesStore.js'
 import Swal from 'sweetalert2'
 import EasyDataTable from 'vue3-easy-data-table'
 import 'vue3-easy-data-table/dist/style.css'

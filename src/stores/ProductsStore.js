@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
+import { getCsrfToken } from '../utils/csrf' // Ajusta la ruta según tu proyecto
 
-export const useProductStore = defineStore('product', () => {
+export const useProductStore = defineStore('products', () => {
   const products = ref([])
 
   // Obtener todos los productos
@@ -18,6 +19,7 @@ export const useProductStore = defineStore('product', () => {
   // Crear un producto
   async function create(formData) {
     try {
+      await getCsrfToken()
       const res = await axios.post('/productos', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
@@ -30,6 +32,7 @@ export const useProductStore = defineStore('product', () => {
   // Actualizar un producto
   async function update(id, formData) {
     try {
+      await getCsrfToken()
       const res = await axios.post(`/productos/${id}?_method=PUT`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
@@ -45,6 +48,7 @@ export const useProductStore = defineStore('product', () => {
   // Eliminar un producto
   async function remove(id) {
     try {
+      await getCsrfToken()
       await axios.delete(`/productos/${id}`)
       products.value = products.value.filter(p => p.id !== id)
     } catch (error) {

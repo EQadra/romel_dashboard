@@ -1,64 +1,68 @@
 <template>
-  <div class="max-w-5xl mx-auto p-6">
-    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">
+  <div class="max-w-6xl mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
       Transacciones del Día
     </h2>
 
-    <button
-      @click="loadTransactions"
-      class="bg-blue-600 text-white px-4 py-2 mb-4 rounded hover:bg-blue-700"
+    <!-- Card de Recarga -->
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center justify-center mb-6"
     >
-      Recargar
-    </button>
+      <p class="text-gray-700 dark:text-gray-200 mb-3">
+        Presiona el botón para actualizar la lista de transacciones.
+      </p>
+      <button
+        @click="loadTransactions"
+        class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition disabled:opacity-60"
+        :disabled="loading"
+      >
+        <span v-if="!loading">🔄 Recargar</span>
+        <span v-else>Cargando...</span>
+      </button>
+    </div>
 
-    <div v-if="loading" class="text-gray-600 dark:text-gray-300">Cargando...</div>
+    <!-- Estado de error -->
+    <div v-if="error" class="text-red-500 mb-4 text-center">
+      {{ error }}
+    </div>
 
-    <div v-if="error" class="text-red-500">{{ error }}</div>
-
-    <table
+    <!-- Tabla de transacciones -->
+    <EasyDataTable
       v-if="todayTransactions.length"
-      class="min-w-full bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden"
+      :headers="headers"
+      :items="formattedTransactions"
+      :search-field="'type'"
+      :rows-per-page="10"
+      alternating
+      buttons-pagination
+      table-class="rounded-xl shadow"
     >
-      <thead class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
-        <tr>
-          <th class="text-left px-4 py-2">#</th>
-          <th class="text-left px-4 py-2">Tipo</th>
-          <th class="text-left px-4 py-2">Metal</th>
-          <th class="text-left px-4 py-2">Gramos</th>
-          <th class="text-left px-4 py-2">S/</th>
-          <th class="text-left px-4 py-2">USD</th>
-          <th class="text-left px-4 py-2">T/C</th>
-          <th class="text-left px-4 py-2">Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(t, i) in todayTransactions"
-          :key="t.id"
-          class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <td class="px-4 py-2">{{ i + 1 }}</td>
-          <td class="px-4 py-2 capitalize">{{ t.type }}</td>
-          <td class="px-4 py-2 capitalize">{{ t.metal_type }}</td>
-          <td class="px-4 py-2">{{ t.grams }}</td>
-          <td class="px-4 py-2">S/ {{ t.total_pen }}</td>
-          <td class="px-4 py-2">$ {{ t.total_usd }}</td>
-          <td class="px-4 py-2">{{ t.exchange_rate }}</td>
-          <td class="px-4 py-2">{{ new Date(t.created_at).toLocaleString() }}</td>
-        </tr>
-      </tbody>
-    </table>
+      <template #item-total_pen="{ total_pen }">
+        S/ {{ Number(total_pen).toFixed(2) }}
+      </template>
+      <template #item-total_usd="{ total_usd }">
+        $ {{ Number(total_usd).toFixed(2) }}
+      </template>
+      <template #item-created_at="{ created_at }">
+        {{ new Date(created_at).toLocaleString() }}
+      </template>
+    </EasyDataTable>
 
-    <div v-else-if="!loading" class="text-gray-500 dark:text-gray-400">
+    <div
+      v-else-if="!loading"
+      class="text-gray-500 dark:text-gray-400 text-center mt-6"
+    >
       No hay transacciones registradas hoy.
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useTransactionsStore } from '../../stores/transactionStore'
+import { onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useTransactionsStore } from '../../stores/transactionsStore'
+import EasyDataTable from 'vue3-easy-data-table'
+import 'vue3-easy-data-table/dist/style.css'
 
 const store = useTransactionsStore()
 const { loading, error, todayTransactions } = storeToRefs(store)
@@ -70,4 +74,28 @@ const loadTransactions = () => {
 onMounted(() => {
   loadTransactions()
 })
+
+// Cabeceras para la tabla
+const headers = [
+  { text: '#', value: 'index' },
+  { text: 'Tipo', value: 'type' },
+  { text: 'Metal', value: 'metal_type' },
+  { text: 'Gramos', value: 'grams' },
+  { text: 'S/', value: 'total_pen' },
+  { text: 'USD', value: 'total_usd' },
+  { text: 'T/C', value: 'exchange_rate' },
+  { text: 'Fecha', value: 'created_at' },
+]
+
+// Añadir índice a cada transacción
+const formattedTransactions = computed(() =>
+  todayTransactions.value.map((t, i) => ({
+    ...t,
+    index: i + 1,
+  }))
+)
 </script>
+
+<style scoped>
+/* Puedes añadir más estilos personalizados aquí si deseas */
+</style>

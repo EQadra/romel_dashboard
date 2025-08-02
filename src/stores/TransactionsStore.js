@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
+import { getCsrfToken } from '../utils/csrf' // ajusta la ruta si es necesario
 
 export const useTransactionsStore = defineStore('transactions', () => {
   const loading = ref(false)
@@ -9,24 +10,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const success = ref(null)
   const todayTransactions = ref([])
 
-  const getCsrfToken = async () => {
-    try {
-      await axios.get('/sanctum/csrf-cookie')
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1]
-
-      if (!token) throw new Error('XSRF-TOKEN no encontrado en cookies')
-
-      axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
-    } catch (err) {
-      console.error('❌ Error obteniendo CSRF cookie', err)
-      throw new Error('No se pudo obtener el token CSRF')
-    }
-  }
-
-  // Crear una transacción
+  // 🟢 Crear una transacción normal
   const createTransaction = async (payload) => {
     loading.value = true
     error.value = null
@@ -44,7 +28,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
   }
 
-  // Obtener las transacciones del día
+  // 📅 Obtener las transacciones del día
   const fetchTodayTransactions = async () => {
     loading.value = true
     error.value = null
@@ -59,6 +43,23 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
   }
 
+  // 🧾 Guardar cálculo desde la calculadora de oro
+  const saveGoldCalculation = async (payload) => {
+    loading.value = true
+    success.value = null
+    error.value = null
+
+    try {
+      await getCsrfToken()
+      const { data } = await axios.post('http://localhost:8000/api/calculos', payload)
+      success.value = data.message || 'Cálculo guardado exitosamente'
+    } catch (e) {
+      error.value = e.response?.data?.message || 'Error al guardar cálculo'
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     error,
@@ -66,5 +67,6 @@ export const useTransactionsStore = defineStore('transactions', () => {
     todayTransactions,
     createTransaction,
     fetchTodayTransactions,
+    saveGoldCalculation,
   }
 })

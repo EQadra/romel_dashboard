@@ -1,11 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
-
-// Configuración global de Axios
-axios.defaults.baseURL = 'http://localhost:8000'
-axios.defaults.withCredentials = true // Necesario para enviar cookies con Laravel
+import axios from 'axios' // Usa la instancia ya configurada
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
@@ -13,24 +9,26 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const error = ref(null)
 
+  const saveUser = (data) => {
+    user.value = data
+    localStorage.setItem('user', JSON.stringify(data))
+  }
+
+  const clearUser = () => {
+    user.value = null
+    localStorage.removeItem('user')
+  }
+
   const getCsrfToken = async () => {
     try {
       await axios.get('/sanctum/csrf-cookie')
-  
-      // 🔐 Leer el valor de la cookie XSRF-TOKEN
       const token = document.cookie
         .split('; ')
         .find(row => row.startsWith('XSRF-TOKEN='))
         ?.split('=')[1]
-  
-      if (!token) {
-        throw new Error('XSRF-TOKEN no encontrado en cookies')
-      }
-  
-      // ✅ Agregar manualmente el header
+
+      if (!token) throw new Error('XSRF-TOKEN no encontrado en cookies')
       axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
-  
-      console.log('✅ CSRF token enviado:', decodeURIComponent(token))
     } catch (err) {
       console.error('❌ Error obteniendo CSRF cookie', err)
       throw new Error('No se pudo obtener el token CSRF')
@@ -43,13 +41,13 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await getCsrfToken()
       await axios.post('/login', { email, password })
-
       await fetchUser()
       router.push('/dashboard')
     } catch (err) {
-      error.value = err.response?.data?.message || 'Error al iniciar sesión'
-      console.error('❌ Login fallido:', error.value)
-      throw error.value
+      const msg = err.response?.data?.message || 'Error al iniciar sesión'
+      console.error('❌ Login fallido:', msg)
+      error.value = msg
+      throw msg
     } finally {
       loading.value = false
     }
@@ -61,10 +59,12 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await getCsrfToken()
       await axios.post('/register', { name, email, password })
-      router.push('/verify') // Redirige a verificación si aplica
+      router.push('/verify')
     } catch (err) {
-      error.value = err.response?.data?.message || 'Error al registrarse'
-      throw error.value
+      const msg = err.response?.data?.message || 'Error al registrarse'
+      console.error('❌ Registro fallido:', msg)
+      error.value = msg
+      throw msg
     } finally {
       loading.value = false
     }
@@ -72,13 +72,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get('/profile') // Usa el endpoint autenticado
-      user.value = res.data.user || res.data
-      localStorage.setItem('user', JSON.stringify(user.value))
+      const res = await axios.get('/profile')
+      const { id, name, email } = res.data.user
+      saveUser({ id, name, email })
     } catch (err) {
       console.warn('⚠️ No autenticado:', err.response?.status)
-      user.value = null
-      localStorage.removeItem('user')
+      clearUser()
     }
   }
 
@@ -88,8 +87,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       console.warn('⚠️ Error al cerrar sesión:', err.message)
     }
-    user.value = null
-    localStorage.removeItem('user')
+    clearUser()
     router.push('/login')
   }
 

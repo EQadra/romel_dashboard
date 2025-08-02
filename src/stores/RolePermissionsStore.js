@@ -1,6 +1,7 @@
 // stores/useRolePermissionsStore.js
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { getCsrfToken } from '../utils/csrf' // Ajusta la ruta si es necesario
 
 export const useRolePermissionsStore = defineStore('rolePermissions', {
   state: () => ({
@@ -10,48 +11,42 @@ export const useRolePermissionsStore = defineStore('rolePermissions', {
   }),
 
   actions: {
-    async getCsrfToken() {
+    async fetchAllPermissions() {
       try {
-        await axios.get('/sanctum/csrf-cookie')
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('XSRF-TOKEN='))
-          ?.split('=')[1]
-
-        if (!token) throw new Error('XSRF-TOKEN no encontrado en cookies')
-
-        axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token)
-        console.log('✅ CSRF token enviado:', decodeURIComponent(token))
-      } catch (err) {
-        console.error('❌ Error obteniendo CSRF cookie', err)
-        throw new Error('No se pudo obtener el token CSRF')
+        const res = await axios.get('http://localhost:8000/permisos')
+        this.allPermissions = res.data
+      } catch (error) {
+        console.error('Error al obtener todos los permisos:', error)
       }
     },
 
-    async fetchAllPermissions() {
-      const res = await axios.get('http://localhost:8000/permisos')
-      this.allPermissions = res.data
-    },
-
     async fetchAssignedPermissions(roleId) {
-      const res = await axios.get(`http://localhost:8000/roles/${roleId}/permisos`)
-      this.assignedPermissions = res.data.map(p => p.name)
+      try {
+        const res = await axios.get(`http://localhost:8000/roles/${roleId}/permisos`)
+        this.assignedPermissions = res.data.map(p => p.name)
+      } catch (error) {
+        console.error('Error al obtener permisos asignados:', error)
+      }
     },
 
     async assignPermission(roleId, permission) {
-      await this.getCsrfToken()
-      await axios.post(`http://localhost:8000/roles/${roleId}/permisos/asignar`, {
-        permission
-      })
-      this.assignedPermissions.push(permission)
+      try {
+        await getCsrfToken()
+        await axios.post(`http://localhost:8000/roles/${roleId}/permisos/asignar`, { permission })
+        this.assignedPermissions.push(permission)
+      } catch (error) {
+        console.error('Error al asignar permiso:', error)
+      }
     },
 
     async revokePermission(roleId, permission) {
-      await this.getCsrfToken()
-      await axios.post(`http://localhost:8000/roles/${roleId}/permisos/revocar`, {
-        permission
-      })
-      this.assignedPermissions = this.assignedPermissions.filter(p => p !== permission)
+      try {
+        await getCsrfToken()
+        await axios.post(`http://localhost:8000/roles/${roleId}/permisos/revocar`, { permission })
+        this.assignedPermissions = this.assignedPermissions.filter(p => p !== permission)
+      } catch (error) {
+        console.error('Error al revocar permiso:', error)
+      }
     }
   }
 })

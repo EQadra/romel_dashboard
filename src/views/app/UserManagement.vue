@@ -1,144 +1,162 @@
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold mb-4">Gestión de Usuarios</h1>
-
-    <div v-if="loading">Cargando usuarios...</div>
-    <div v-else-if="error" class="text-red-500">{{ error }}</div>
-
-    <!-- Tabla de usuarios -->
-    <div v-else>
-      <table class="w-full border">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="p-2 text-left">Nombre</th>
-            <th class="p-2 text-left">Email</th>
-            <th class="p-2 text-left">Roles</th>
-            <th class="p-2 text-left">Permisos</th>
-            <th class="p-2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in users" :key="user.id" class="border-t">
-            <td class="p-2">{{ user.name }}</td>
-            <td class="p-2">{{ user.email }}</td>
-            <td class="p-2">
-              <span
-                v-for="role in user.roles"
-                :key="role.id"
-                class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1"
-              >
-                {{ role.name }}
-              </span>
-            </td>
-            <td class="p-2">
-              <span
-                v-for="perm in user.permissions"
-                :key="perm.id"
-                class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1"
-              >
-                {{ perm.name }}
-              </span>
-            </td>
-            <td class="p-2 text-center">
-              <button
-                @click="selectUser(user)"
-                class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-              >
-                Editar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="p-6 space-y-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Gestión de Usuarios</h1>
+      <button
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        @click="startCreate"
+      >
+        + Agregar Usuario
+      </button>
     </div>
 
-    <!-- Panel de edición -->
-    <div v-if="selectedUser" class="mt-6 border-t pt-4">
-      <h2 class="text-xl font-semibold mb-2">Editar Usuario</h2>
-      <form @submit.prevent="saveChanges">
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm mb-1">Nombre</label>
-            <input
-              v-model="form.name"
-              type="text"
-              class="w-full border px-2 py-1 rounded"
-            />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Email</label>
-            <input
-              v-model="form.email"
-              type="email"
-              class="w-full border px-2 py-1 rounded"
-            />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm mb-1">Roles (coma-separados)</label>
-            <input
-              v-model="form.roles"
-              type="text"
-              class="w-full border px-2 py-1 rounded"
-              placeholder="admin,editor"
-            />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Permisos (coma-separados)</label>
-            <input
-              v-model="form.permissions"
-              type="text"
-              class="w-full border px-2 py-1 rounded"
-              placeholder="crear,editar"
-            />
-          </div>
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            type="submit"
-            class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+    <EasyDataTable
+      :headers="headers"
+      :items="users"
+      :loading="loading"
+      class="rounded-xl border border-gray-200 dark:border-gray-700"
+    >
+      <template #item-roles="{ roles }">
+        <div class="flex flex-wrap gap-1">
+          <span
+            v-for="role in roles"
+            :key="role.id"
+            class="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full"
           >
-            Guardar
-          </button>
-          <button
-            type="button"
-            @click="cancelEdit"
-            class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-          >
-            Cancelar
-          </button>
+            {{ role.name }}
+          </span>
         </div>
-      </form>
+      </template>
+
+      <template #item-permissions="{ permissions }">
+        <div class="flex flex-wrap gap-1 max-w-xs">
+          <span
+            v-for="perm in permissions"
+            :key="perm.id"
+            class="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded"
+          >
+            {{ perm.name }}
+          </span>
+        </div>
+      </template>
+
+      <template #item-actions="{ id }">
+        <button
+          class="px-3 py-1 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700"
+          @click="selectUser(users.find(u => u.id === id))"
+        >
+          Editar
+        </button>
+      </template>
+    </EasyDataTable>
+
+    <div
+      v-if="selectedUser"
+      class="mt-8 p-4 border rounded-lg bg-white dark:bg-gray-800 dark:text-white"
+    >
+      <h2 class="text-lg font-semibold mb-4">{{ selectedUser.id ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium">Nombre</label>
+          <input v-model="form.name" type="text" class="w-full mt-1 p-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Email</label>
+          <input v-model="form.email" type="email" class="w-full mt-1 p-2 border rounded" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Roles</label>
+          <select v-model="form.roles" multiple class="w-full mt-1 p-2 border rounded">
+            <option v-for="role in roles" :key="role.id" :value="role.name">{{ role.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Permisos relacionados</label>
+          <div class="flex flex-wrap gap-1 mt-1">
+            <span
+              v-for="perm in relatedPermissions"
+              :key="perm"
+              class="px-2 py-1 text-xs bg-gray-300 text-gray-800 rounded"
+            >
+              {{ perm }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-4 mt-6">
+        <button
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          @click="saveChanges"
+        >
+          Guardar
+        </button>
+        <button
+          class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+          @click="cancelEdit"
+        >
+          Cancelar
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useUsersStore } from '../../stores/UsersStore'
+import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import EasyDataTable from 'vue3-easy-data-table'
+import 'vue3-easy-data-table/dist/style.css'
+
+import { useUsersStore } from '../../stores/UsersStore'
+import { useRolesStore } from '../../stores/RolesStore'
+import { useRolePermissionsStore } from '../../stores/RolePermissionsStore'
+import { usePermissionsStore } from '../../stores/PermissionsStore'
 
 const userStore = useUsersStore()
+const rolesStore = useRolesStore()
+const rolePermStore = useRolePermissionsStore()
+const permissionsStore = usePermissionsStore()
 
-// ⚠️ Corrección: reactividad funcional usando storeToRefs
-const { users, loading, error } = storeToRefs(userStore)
+const { users, loading } = storeToRefs(userStore)
+const { roles } = storeToRefs(rolesStore)
+const { allPermissions } = storeToRefs(rolePermStore)
+const { permissions } = storeToRefs(permissionsStore)
 
-// Acciones (pueden desestructurarse directamente)
-const { fetchUsers, updateUser, syncRoles, syncPermissions } = userStore
+const { fetchUsers, updateUser, createUser, syncRoles, syncPermissions } = userStore
 
 const selectedUser = ref(null)
 const form = ref({
   name: '',
   email: '',
-  roles: '',
-  permissions: '',
+  roles: [],
 })
 
-onMounted(() => {
-  fetchUsers()
+const headers = [
+  { text: 'Nombre', value: 'name' },
+  { text: 'Email', value: 'email' },
+  { text: 'Roles', value: 'roles' },
+  { text: 'Permisos', value: 'permissions' },
+  { text: 'Acciones', value: 'actions' },
+]
+
+onMounted(async () => {
+  await fetchUsers()
+  await rolesStore.fetchRoles()
+  await rolePermStore.fetchAllPermissions()
+  await permissionsStore.fetchPermissions()
+})
+
+const relatedPermissions = computed(() => {
+  const perms = new Set()
+  form.value.roles.forEach(roleName => {
+    const rolePerms = allPermissions.value.filter(p =>
+      p.roles?.some(r => r.name === roleName)
+    )
+    rolePerms.forEach(p => perms.add(p.name))
+  })
+  return [...perms]
 })
 
 function selectUser(user) {
@@ -146,37 +164,39 @@ function selectUser(user) {
   form.value = {
     name: user.name,
     email: user.email,
-    roles: user.roles.map(r => r.name).join(','),
-    permissions: user.permissions.map(p => p.name).join(','),
+    roles: user.roles.map(r => r.name),
   }
+}
+
+function startCreate() {
+  selectedUser.value = { id: null }
+  form.value = { name: '', email: '', roles: [] }
 }
 
 function cancelEdit() {
   selectedUser.value = null
+  form.value = { name: '', email: '', roles: [] }
 }
 
 async function saveChanges() {
-  const id = selectedUser.value.id
-
-  await updateUser(id, {
+  const userId = selectedUser.value?.id
+  const payload = {
     name: form.value.name,
     email: form.value.email,
-  })
+  }
 
-  const roleArray = form.value.roles.split(',').map(r => r.trim()).filter(Boolean)
-  await syncRoles(id, roleArray)
+  let id = userId
+  if (id) {
+    await updateUser(id, payload)
+  } else {
+    const newUser = await createUser(payload)
+    id = newUser.id
+  }
 
-  const permArray = form.value.permissions.split(',').map(p => p.trim()).filter(Boolean)
-  await syncPermissions(id, permArray)
+  await syncRoles(id, form.value.roles)
+  await syncPermissions(id, relatedPermissions.value)
 
   await fetchUsers()
-  selectedUser.value = null
+  cancelEdit()
 }
 </script>
-
-<style scoped>
-table th,
-table td {
-  border: 1px solid #ddd;
-}
-</style>
